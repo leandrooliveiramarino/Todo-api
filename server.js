@@ -12,49 +12,40 @@ app.use(bodyParser.json());
 
 // GET /todos?completed=true&q=house
 app.get('/todos', function(req, res) {
-	var queryParams = req.query;
-	var filteredTodos = todos;
+	var query = req.query;
+	var where = {};
 
-	if (queryParams.hasOwnProperty('completed')) {
-		if (queryParams.completed === 'true')
-			filteredTodos = _.where(filteredTodos, {
-				completed: true
-			});
-		else if (queryParams.completed === 'false')
-			filteredTodos = _.where(filteredTodos, {
-				completed: false
-			});
+	if(query.hasOwnProperty('completed') && query.completed === 'true') {
+		where.completed = true;
+	} else if(query.hasOwnProperty('completed') && query.completed === 'false') {
+		where.completed = false
 	}
 
-	if (queryParams.hasOwnProperty('q') && queryParams.q.trim().length > 0) {
-		filteredTodos = _.filter(filteredTodos, function(todo) {
-			return todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) > -1;
-		});
+	if(query.hasOwnProperty('q') && query.q.trim().length > 0) {
+		where.description = {
+			$like: '%'+query.q+'%'
+		}
 	}
 
-	res.json(filteredTodos);
+	db.todo.findAll({
+		where: where
+	}).then(function(todos){
+		return res.json(todos);
+	}, function(e) {
+		res.status(500).send();
+	});
 });
 // GET /todos/:id
 app.get('/todos/:id', function(req, res) {
 	var todoId = parseInt(req.params.id);
 
-	db.todo.findById(todoId).then(function(todo){
-		if(todo)
+	db.todo.findById(todoId).then(function(todo) {
+		if (todo)
 			return res.status(200).json(todo.toJSON());
 		res.status(404).send();
-	}, function(e){
+	}, function(e) {
 		res.status(500).send();
 	});
-
-	// var matchedTodo = _.findWhere(todos, {
-	// 	id: todoId
-	// });
-
-	// if (!matchedTodo) {
-	// 	res.status(404).send();
-	// 	return;
-	// }
-
 });
 
 // POST /todos
@@ -66,7 +57,7 @@ app.post('/todos', function(req, res) {
 		return res.status(400).send();
 	}
 
-	db.todo.create(body).then(function(todo){
+	db.todo.create(body).then(function(todo) {
 		res.status(200).json(todo.toJSON());
 	}, function(e) {
 		res.status(400).json(e);
@@ -127,9 +118,8 @@ app.put('/todos/:id', function(req, res) {
 
 });
 
-db.sequelize.sync().then(function(){
-	 app.listen(PORT, function() {
+db.sequelize.sync().then(function() {
+	app.listen(PORT, function() {
 		console.log('Express listening on port ' + PORT + '!');
 	});
 });
-
