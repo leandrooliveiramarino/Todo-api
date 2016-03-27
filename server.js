@@ -119,15 +119,8 @@ app.put('/todos/:id', function(req, res) {
 app.post('/users', function(req, res) {
 			var body = _.pick(req.body, 'email', 'password');
 
-			if (!body)
-				return res.status(404).send();
-
-			if ((body.hasOwnProperty('email') && !_.isString('email')) ||
-				(body.hasOwnProperty('password') && !_.isString('password')))
-				return res.status(404).send();
-
 			db.user.create(body).then(function(user) {
-					res.json(user.toJSON());
+					res.json(user.toPublicJson());
 				}, function(e) {
 					res.status(400).json(e);
 				});
